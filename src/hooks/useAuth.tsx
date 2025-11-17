@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
 import { User, Session } from '@supabase/supabase-js'
 import { supabase, auth as authHelpers } from '@/lib/supabase'
-import { Profile } from '@/types/database.types'
+import { Profile, ProfileInsert } from '@/types/database.types'
 
 interface AuthContextType {
   user: User | null
@@ -77,14 +77,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const user = (await supabase.auth.getUser()).data.user
         if (user) {
           console.log('Creating profile for user:', userId)
+          const newProfileData: ProfileInsert = {
+            id: userId,
+            email: user.email || '',
+            full_name: user.user_metadata?.full_name || null,
+            role: 'user',
+          }
           const { data: newProfile, error: createError } = await supabase
             .from('profiles')
-            .insert({
-              id: userId,
-              email: user.email || '',
-              full_name: user.user_metadata?.full_name || null,
-              role: 'user',
-            })
+            // @ts-ignore - Supabase type inference issue
+            .insert(newProfileData)
             .select()
             .maybeSingle()
 
