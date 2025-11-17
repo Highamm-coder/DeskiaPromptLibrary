@@ -82,6 +82,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             email: user.email || '',
             full_name: user.user_metadata?.full_name || null,
             role: 'user',
+            onboarding_completed: false,
           }
           const { data: newProfile, error: createError } = await supabase
             .from('profiles')

@@ -1,18 +1,29 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { db } from '@/lib/supabase'
+import { db, supabase } from '@/lib/supabase'
+import { useAuth } from '@/hooks/useAuth'
 import Header from '@/components/dashboard/Header'
 import Sidebar from '@/components/dashboard/Sidebar'
 import PromptList from '@/components/prompts/PromptList'
 import PromptModal from '@/components/prompts/PromptModal'
+import { Onboarding } from '@/components/onboarding/Onboarding'
 import { PromptWithDetails } from '@/types/database.types'
 
 export default function Dashboard() {
+  const { profile } = useAuth()
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [selectedTags, setSelectedTags] = useState<string[]>([])
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [editingPrompt, setEditingPrompt] = useState<PromptWithDetails | null>(null)
+  const [showOnboarding, setShowOnboarding] = useState(false)
+
+  // Check if onboarding should be shown
+  useEffect(() => {
+    if (profile && !profile.onboarding_completed) {
+      setShowOnboarding(true)
+    }
+  }, [profile])
 
   const { data: prompts, isLoading, refetch } = useQuery({
     queryKey: ['prompts', selectedCategory, searchQuery],
@@ -48,6 +59,38 @@ export default function Dashboard() {
     refetch()
   }
 
+  const handleCompleteOnboarding = async () => {
+    if (!profile) return
+
+    try {
+      await supabase
+        .from('profiles')
+        // @ts-ignore - Supabase type inference issue
+        .update({ onboarding_completed: true })
+        .eq('id', profile.id)
+
+      setShowOnboarding(false)
+    } catch (error) {
+      console.error('Error completing onboarding:', error)
+    }
+  }
+
+  const handleSkipOnboarding = async () => {
+    if (!profile) return
+
+    try {
+      await supabase
+        .from('profiles')
+        // @ts-ignore - Supabase type inference issue
+        .update({ onboarding_completed: true })
+        .eq('id', profile.id)
+
+      setShowOnboarding(false)
+    } catch (error) {
+      console.error('Error skipping onboarding:', error)
+    }
+  }
+
   return (
     <div className="h-screen flex flex-col">
       <Header
@@ -79,6 +122,13 @@ export default function Dashboard() {
         <PromptModal
           prompt={editingPrompt}
           onClose={handleCloseModal}
+        />
+      )}
+
+      {showOnboarding && (
+        <Onboarding
+          onComplete={handleCompleteOnboarding}
+          onSkip={handleSkipOnboarding}
         />
       )}
     </div>
